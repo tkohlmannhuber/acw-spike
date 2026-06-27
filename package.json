@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.1.3"
   }
 }
