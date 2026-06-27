@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+@theme {
+  --color-spike-yellow: #FFDD00;
+  --color-spike-yellow-dark: #E6B800;
+  --color-spike-black: #0B0B0C;
+  --color-spike-surface: #16181C;
+  --color-spike-surface-2: #1E2128;
+  --color-spike-white: #FAFAFA;
+  --color-spike-accent: #FF5A1F;
+  --color-spike-muted: #6B7280;
+  --color-spike-border: #2A2D35;
+
+  --font-display: "Anton", "Archivo Black", sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius-card: 1.25rem;
+  --radius-btn: 0.625rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-spike-black);
+    color: var(--color-spike-white);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Roundnet net SVG background motif — used as decorative element */
+@layer utilities {
+  .net-bg {
+    background-image: radial-gradient(circle, rgba(255, 221, 0, 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .gradient-yellow {
+    background: linear-gradient(135deg, var(--color-spike-yellow) 0%, var(--color-spike-yellow-dark) 100%);
+  }
+
+  .text-display {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .card {
+    background-color: var(--color-spike-surface);
+    border: 1px solid var(--color-spike-border);
+    border-radius: var(--radius-card);
+  }
+
+  .btn-primary {
+    background: var(--color-spike-yellow);
+    color: var(--color-spike-black);
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-btn);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-spike-yellow-dark);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-spike-white);
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-btn);
+    border: 1px solid var(--color-spike-border);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--color-spike-yellow);
+    color: var(--color-spike-yellow);
+  }
+
+  .btn-accent {
+    background: var(--color-spike-accent);
+    color: white;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-btn);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-accent:hover {
+    opacity: 0.9;
+  }
+
+  .score-input {
+    background: var(--color-spike-surface-2);
+    border: 2px solid var(--color-spike-border);
+    border-radius: 0.75rem;
+    color: var(--color-spike-white);
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    text-align: center;
+    width: 5rem;
+    padding: 0.5rem;
+    transition: border-color 0.15s;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+
+  .score-input:focus {
+    border-color: var(--color-spike-yellow);
+  }
+
+  .score-input::-webkit-outer-spin-button,
+  .score-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .badge-live {
+    background: var(--color-spike-accent);
+    color: white;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    animation: pulse-live 2s infinite;
+  }
+
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .status-pill {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-block;
+  }
+}
