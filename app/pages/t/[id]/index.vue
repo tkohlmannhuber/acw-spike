@@ -69,6 +69,13 @@ const finishedMatchCount = computed(() => tournament.value?.matches?.filter((m: 
     </div>
 
     <template v-else-if="tournament">
+      <!-- Nav -->
+      <TournamentNav
+        :tournament-id="id"
+        :status="tournament.status"
+        :format="tournament.format"
+      />
+
       <!-- Header -->
       <div class="mb-8">
         <div class="flex flex-wrap items-start justify-between gap-4">

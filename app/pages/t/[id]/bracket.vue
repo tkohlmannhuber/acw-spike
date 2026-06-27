@@ -81,9 +81,16 @@ async function finishTournament() {
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-    <NuxtLink :to="`/t/${id}`" class="inline-flex items-center gap-2 text-sm mb-8 hover:opacity-70 transition-opacity" style="color: var(--color-spike-muted);">
+    <NuxtLink :to="`/t/${id}`" class="inline-flex items-center gap-2 text-sm mb-4 hover:opacity-70 transition-opacity" style="color: var(--color-spike-muted);">
       ← Zum Turnier
     </NuxtLink>
+
+    <TournamentNav
+      v-if="tournament"
+      :tournament-id="id"
+      :status="(tournament as any).status"
+      :format="(tournament as any).format"
+    />
 
     <div class="flex items-start justify-between flex-wrap gap-4 mb-8">
       <h1 class="text-display text-3xl sm:text-4xl" style="color: var(--color-spike-yellow);">KO-Baum</h1>

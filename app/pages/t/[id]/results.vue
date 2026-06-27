@@ -26,9 +26,16 @@ const bronze = computed(() => thirdMatch.value?.winnerId ?? null)
 
 <template>
   <div class="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-    <NuxtLink :to="`/t/${id}`" class="inline-flex items-center gap-2 text-sm mb-8 hover:opacity-70 transition-opacity" style="color: var(--color-spike-muted);">
+    <NuxtLink :to="`/t/${id}`" class="inline-flex items-center gap-2 text-sm mb-4 hover:opacity-70 transition-opacity" style="color: var(--color-spike-muted);">
       ← Zum Turnier
     </NuxtLink>
+
+    <TournamentNav
+      v-if="tournament"
+      :tournament-id="id"
+      :status="(tournament.value as any)?.status ?? 'finished'"
+      :format="(tournament.value as any)?.format ?? 'groups_then_ko'"
+    />
 
     <div class="text-center mb-12">
       <div class="flex justify-center mb-4">

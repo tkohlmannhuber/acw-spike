@@ -155,9 +155,16 @@ async function saveTeamName(teamId: string) {
 
 <template>
   <div class="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-    <NuxtLink :to="`/t/${id}`" class="inline-flex items-center gap-2 text-sm mb-8 hover:opacity-70 transition-opacity" style="color: var(--color-spike-muted);">
+    <NuxtLink :to="`/t/${id}`" class="inline-flex items-center gap-2 text-sm mb-4 hover:opacity-70 transition-opacity" style="color: var(--color-spike-muted);">
       ← Zum Turnier
     </NuxtLink>
+
+    <TournamentNav
+      v-if="tournament"
+      :tournament-id="id"
+      :status="(tournament as any).status"
+      :format="(tournament as any).format"
+    />
 
     <h1 class="text-display text-3xl sm:text-4xl mb-8" style="color: var(--color-spike-yellow);">
       Spieler &amp; Auslosung
