@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_22"]
 
 [phases.install]
-cmds = ["rm -f package-lock.json && npm install"]
+cmds = ["rm -f package-lock.json && npm install --ignore-scripts"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["npx nuxt prepare", "npm run build"]
 
 [start]
 cmd = "npm run db:migrate && node .output/server/index.mjs"
