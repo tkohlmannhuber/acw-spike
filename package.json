@@ -26,15 +26,5 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10"
-  },
-  "optionalDependencies": {
-    "@rolldown/binding-darwin-arm64": "^1.1.3",
-    "@rolldown/binding-linux-x64-gnu": "^1.1.3",
-    "@oxc-parser/binding-darwin-arm64": "^0.133.0",
-    "@oxc-parser/binding-linux-x64-gnu": "^0.133.0",
-    "@oxc-transform/binding-darwin-arm64": "^0.133.0",
-    "@oxc-transform/binding-linux-x64-gnu": "^0.133.0",
-    "@oxc-minify/binding-darwin-arm64": "^0.133.0",
-    "@oxc-minify/binding-linux-x64-gnu": "^0.133.0"
   }
 }
