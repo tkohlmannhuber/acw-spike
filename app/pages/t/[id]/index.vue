@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 const route = useRoute()
 const id = route.params.id as string
 
@@ -52,6 +53,36 @@ const playerCount = computed(() => tournament.value?.players?.length ?? 0)
 const teamCount = computed(() => tournament.value?.teams?.length ?? 0)
 const matchCount = computed(() => tournament.value?.matches?.length ?? 0)
 const finishedMatchCount = computed(() => tournament.value?.matches?.filter((m: any) => m.status === 'finished').length ?? 0)
+
+const showClone = ref(false)
+const cloneName = ref('')
+const cloneDate = ref(new Date().toISOString().slice(0, 10))
+const cloneLoading = ref(false)
+const cloneError = ref('')
+
+function openClone() {
+  cloneName.value = `${tournament.value?.name ?? ''} (Neu)`
+  cloneDate.value = new Date().toISOString().slice(0, 10)
+  cloneError.value = ''
+  showClone.value = true
+}
+
+async function submitClone() {
+  if (!cloneName.value.trim()) return
+  cloneLoading.value = true
+  cloneError.value = ''
+  try {
+    const res = await $fetch<{ id: string }>(`/api/tournaments/${id}/clone`, {
+      method: 'POST',
+      body: { name: cloneName.value.trim(), date: cloneDate.value },
+    })
+    await navigateTo(`/t/${res.id}`)
+  } catch (e: any) {
+    cloneError.value = e?.data?.message || 'Fehler beim Duplizieren.'
+  } finally {
+    cloneLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -98,6 +129,34 @@ const finishedMatchCount = computed(() => tournament.value?.matches?.filter((m: 
         </div>
       </div>
 
+      <!-- Clone modal -->
+      <div v-if="showClone" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7);" @click.self="showClone = false">
+        <div class="card p-6 w-full max-w-md">
+          <h2 class="text-display text-xl mb-1" style="color: var(--color-spike-yellow);">Teams übernehmen</h2>
+          <p class="text-sm mb-5" style="color: var(--color-spike-muted);">
+            Erstellt ein neues Turnier mit denselben {{ (tournament as any).teams?.length }} Teams — Auslosung wird übersprungen.
+          </p>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs mb-1" style="color: var(--color-spike-muted);">Turniername</label>
+              <input v-model="cloneName" type="text" class="w-full score-input text-base px-3 py-2" placeholder="Turniername" />
+            </div>
+            <div>
+              <label class="block text-xs mb-1" style="color: var(--color-spike-muted);">Datum</label>
+              <input v-model="cloneDate" type="date" class="w-full score-input text-base px-3 py-2" />
+            </div>
+          </div>
+          <p v-if="cloneError" class="text-xs mt-3 px-2 py-1 rounded" style="color: var(--color-spike-accent); background: rgba(255,90,31,0.1);">{{ cloneError }}</p>
+          <div class="flex gap-3 mt-5">
+            <button class="btn-secondary flex-1" @click="showClone = false">Abbrechen</button>
+            <button class="btn-primary flex-1 justify-center" :disabled="cloneLoading || !cloneName.trim()" @click="submitClone">
+              <NetSpinner v-if="cloneLoading" :size="16" />
+              {{ cloneLoading ? '...' : 'Turnier erstellen' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Stats row -->
       <div class="grid grid-cols-3 gap-3 mb-8">
         <div class="card p-4 text-center">
@@ -131,6 +190,24 @@ const finishedMatchCount = computed(() => tournament.value?.matches?.filter((m: 
           </div>
           <span class="ml-auto text-lg" style="color: var(--color-spike-muted);">→</span>
         </NuxtLink>
+      </div>
+
+      <!-- Clone action -->
+      <div v-if="(tournament as any).teams?.length > 0" class="mt-4">
+        <button
+          class="w-full card p-4 flex items-center gap-4 transition-all text-left group"
+          style="border-style: dashed;"
+          @mouseenter="$event.currentTarget.style.borderColor = 'rgba(255,221,0,0.4)'"
+          @mouseleave="$event.currentTarget.style.borderColor = 'var(--color-spike-border)'"
+          @click="openClone"
+        >
+          <span class="text-2xl">🔁</span>
+          <div class="flex-1">
+            <div class="font-semibold text-sm group-hover:text-yellow-400 transition-colors">Neues Turnier mit gleichen Teams</div>
+            <div class="text-xs mt-0.5" style="color: var(--color-spike-muted);">{{ (tournament as any).teams?.length }} Teams übernehmen, Auslosung überspringen</div>
+          </div>
+          <span class="text-lg" style="color: var(--color-spike-muted);">→</span>
+        </button>
       </div>
 
       <!-- Phase progress bar -->

@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm'
 import { useDb } from '../../../utils/db'
 import { tournaments, teams, pools, matches } from '../../../database/schema'
-import { shuffle } from '../../../utils/draw'
+import { shuffle, scheduleMatches } from '../../../utils/draw'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   await db.delete(matches).where(eq(matches.tournamentId, id))
   await db.delete(pools).where(eq(pools.tournamentId, id))
 
-  const poolCount = tournament.poolCount
+  const poolCount = tournament.format === 'round_robin_only' ? 1 : tournament.poolCount
   const shuffledTeams = shuffle([...allTeams])
 
   // Create pools
@@ -44,15 +44,15 @@ export default defineEventHandler(async (event) => {
     await db.update(teams).set({ poolId }).where(eq(teams.id, teamId))
   }
 
-  // Generate round-robin matches per pool
+  // Generate round-robin matches per pool, shuffled so no team plays all its games in a row
   const matchesToInsert: typeof matches.$inferInsert[] = []
 
   for (const pool of createdPools) {
     const poolTeams = teamPoolMap.filter(t => t.poolId === pool.id).map(t => t.teamId)
-    // Generate all pairs
+    const pairs: typeof matches.$inferInsert[] = []
     for (let i = 0; i < poolTeams.length; i++) {
       for (let j = i + 1; j < poolTeams.length; j++) {
-        matchesToInsert.push({
+        pairs.push({
           tournamentId: id,
           phase: 'group',
           poolId: pool.id,
@@ -62,6 +62,7 @@ export default defineEventHandler(async (event) => {
         })
       }
     }
+    matchesToInsert.push(...scheduleMatches(pairs))
   }
 
   const createdMatches = matchesToInsert.length > 0

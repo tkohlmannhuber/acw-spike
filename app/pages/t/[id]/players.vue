@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue'
 const route = useRoute()
 const router = useRouter()
 const id = route.params.id as string
@@ -6,6 +7,39 @@ const id = route.params.id as string
 useHead({ title: 'Spieler & Auslosung — ACW Spikeball' })
 
 const { data: tournament, refresh } = await useFetch(`/api/tournaments/${id}`)
+
+// ─── Known players (global registry) ──────────────────────────────────────
+
+const { data: knownPlayers, refresh: refreshKnown } = await useFetch<Array<{ id: string; name: string }>>('/api/known-players')
+const showKnown = ref(false)
+
+function addKnownPlayer(name: string) {
+  if (!editablePlayers.value.includes(name)) {
+    editablePlayers.value.push(name)
+  }
+}
+
+function addAllKnown() {
+  for (const p of knownPlayers.value ?? []) {
+    if (!editablePlayers.value.includes(p.name)) {
+      editablePlayers.value.push(p.name)
+    }
+  }
+}
+
+async function saveToRegistry() {
+  if (editablePlayers.value.length === 0) return
+  await $fetch('/api/known-players', {
+    method: 'POST',
+    body: { names: editablePlayers.value },
+  })
+  await refreshKnown()
+}
+
+async function deleteKnown(id: string) {
+  await $fetch(`/api/known-players/${id}`, { method: 'DELETE' })
+  await refreshKnown()
+}
 
 // ─── Player list state ─────────────────────────────────────────────────────
 
@@ -132,7 +166,71 @@ async function confirmDraw() {
   router.push(`/t/${id}/groups`)
 }
 
-// Editable team names
+// ─── Manual team builder ───────────────────────────────────────────────────
+
+const manualMode = ref(false)
+// pairs[i] = array of player names in that team
+const manualPairs = ref<string[][]>([[]])
+const manualLoading = ref(false)
+const manualError = ref('')
+
+function openManual() {
+  manualPairs.value = [[]]
+  manualError.value = ''
+  manualMode.value = true
+}
+
+const manualAssigned = computed(() => new Set(manualPairs.value.flat()))
+
+function assignPlayer(name: string) {
+  // Find last incomplete slot (< 2 players), else add new slot
+  const idx = manualPairs.value.findIndex(p => p.length < 2)
+  if (idx >= 0) {
+    manualPairs.value[idx].push(name)
+  } else {
+    manualPairs.value.push([name])
+  }
+}
+
+function removeFromPair(pairIdx: number, playerIdx: number) {
+  manualPairs.value[pairIdx].splice(playerIdx, 1)
+  if (manualPairs.value[pairIdx].length === 0 && manualPairs.value.length > 1) {
+    manualPairs.value.splice(pairIdx, 1)
+  }
+}
+
+function addEmptyPair() {
+  manualPairs.value.push([])
+}
+
+const manualComplete = computed(() =>
+  manualPairs.value.length > 0 &&
+  manualPairs.value.every(p => p.length >= 1) &&
+  manualAssigned.value.size === editablePlayers.value.length
+)
+
+async function saveManualTeams() {
+  manualLoading.value = true
+  manualError.value = ''
+  try {
+    await $fetch(`/api/tournaments/${id}/teams-fixed`, {
+      method: 'POST',
+      body: {
+        playerNames: editablePlayers.value,
+        teamPairs: manualPairs.value.filter(p => p.length > 0),
+      },
+    })
+    await refresh()
+    manualMode.value = false
+    router.push(`/t/${id}/groups`)
+  } catch (e: any) {
+    manualError.value = e?.data?.message || 'Fehler beim Speichern.'
+  } finally {
+    manualLoading.value = false
+  }
+}
+
+// ─── Editable team names ───────────────────────────────────────────────────
 const editingTeamId = ref<string | null>(null)
 const editingTeamName = ref('')
 
@@ -208,6 +306,47 @@ async function saveTeamName(teamId: string) {
       </div>
     </div>
 
+    <!-- Known players panel -->
+    <div v-if="drawPhase === 'idle' && (knownPlayers?.length ?? 0) > 0" class="card p-4 mb-4">
+      <button
+        class="flex items-center justify-between w-full text-left"
+        @click="showKnown = !showKnown"
+      >
+        <span class="text-display text-sm" style="color: var(--color-spike-muted);">
+          GESPEICHERTE SPIELER ({{ knownPlayers?.length }})
+        </span>
+        <span class="text-xs" style="color: var(--color-spike-muted);">{{ showKnown ? '▲' : '▼' }}</span>
+      </button>
+
+      <Transition name="slide-down">
+        <div v-if="showKnown" class="mt-3">
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button
+              v-for="p in knownPlayers"
+              :key="p.id"
+              class="group relative flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-all"
+              :style="editablePlayers.includes(p.name)
+                ? 'background: rgba(255,221,0,0.15); color: var(--color-spike-yellow); cursor: default; opacity: 0.5;'
+                : 'background: var(--color-spike-surface-2); color: var(--color-spike-white); cursor: pointer;'"
+              :disabled="editablePlayers.includes(p.name)"
+              @click="addKnownPlayer(p.name)"
+            >
+              {{ p.name }}
+              <span
+                class="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                style="color: var(--color-spike-accent);"
+                @click.stop="deleteKnown(p.id)"
+                title="Aus Liste entfernen"
+              >✕</span>
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-secondary text-xs px-3 py-1.5" @click="addAllKnown">Alle hinzufügen</button>
+          </div>
+        </div>
+      </Transition>
+    </div>
+
     <!-- Player entry section -->
     <div v-if="drawPhase === 'idle'" class="card p-6 mb-6">
       <h2 class="text-display text-lg mb-4" style="color: var(--color-spike-white);">Spielerliste</h2>
@@ -263,24 +402,122 @@ async function saveTeamName(teamId: string) {
       </div>
 
       <div class="flex items-center justify-between flex-wrap gap-3 mt-2">
-        <div class="text-sm" :style="isOddCount && editablePlayers.length > 0 ? 'color: var(--color-spike-accent)' : 'color: var(--color-spike-muted)'">
-          {{ editablePlayers.length }} Spieler
-          <span v-if="isOddCount && editablePlayers.length > 0"> — ungerade Anzahl</span>
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="text-sm" :style="isOddCount && editablePlayers.length > 0 ? 'color: var(--color-spike-accent)' : 'color: var(--color-spike-muted)'">
+            {{ editablePlayers.length }} Spieler
+            <span v-if="isOddCount && editablePlayers.length > 0"> — ungerade Anzahl</span>
+          </div>
+          <button
+            v-if="editablePlayers.length > 0"
+            class="text-xs hover:opacity-80 transition-opacity"
+            style="color: var(--color-spike-muted);"
+            title="Spieler in globale Liste speichern"
+            @click="saveToRegistry"
+          >
+            💾 Speichern
+          </button>
         </div>
-        <button
-          class="btn-primary"
-          :disabled="editablePlayers.length < 2 || loading"
-          @click="startDraw"
-        >
-          <NetSpinner v-if="loading" :size="18" />
-          🎱 Teams auslosen
-        </button>
+        <div class="flex gap-2 flex-wrap">
+          <button
+            class="btn-secondary"
+            :disabled="editablePlayers.length < 2 || loading"
+            @click="openManual"
+          >
+            ✋ Teams fix festlegen
+          </button>
+          <button
+            class="btn-primary"
+            :disabled="editablePlayers.length < 2 || loading"
+            @click="startDraw"
+          >
+            <NetSpinner v-if="loading" :size="18" />
+            🎱 Teams auslosen
+          </button>
+        </div>
       </div>
 
       <p v-if="error" class="mt-3 text-sm px-3 py-2 rounded-lg" style="background: rgba(255,90,31,0.1); color: var(--color-spike-accent);">
         {{ error }}
       </p>
     </div>
+
+    <!-- Manual team builder modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="manualMode" class="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto" style="background: rgba(0,0,0,0.8);">
+          <div class="card w-full max-w-lg my-8 p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-display text-xl" style="color: var(--color-spike-yellow);">Teams fix festlegen</h2>
+              <button class="text-lg opacity-40 hover:opacity-80" @click="manualMode = false">✕</button>
+            </div>
+
+            <!-- Available players -->
+            <div class="mb-5">
+              <p class="text-xs mb-2" style="color: var(--color-spike-muted);">Spieler antippen zum Zuweisen</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="name in editablePlayers"
+                  :key="name"
+                  :disabled="manualAssigned.has(name)"
+                  class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                  :style="manualAssigned.has(name)
+                    ? 'background: var(--color-spike-surface-2); color: var(--color-spike-muted); opacity: 0.4; cursor: default;'
+                    : 'background: var(--color-spike-yellow); color: var(--color-spike-black); cursor: pointer;'"
+                  @click="!manualAssigned.has(name) && assignPlayer(name)"
+                >
+                  {{ name }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Team slots -->
+            <div class="space-y-2 mb-4">
+              <div
+                v-for="(pair, pi) in manualPairs"
+                :key="pi"
+                class="flex items-center gap-2 p-3 rounded-xl"
+                style="background: var(--color-spike-surface-2);"
+              >
+                <span class="text-xs font-mono w-14 shrink-0 text-display" style="color: var(--color-spike-muted);">Team {{ pi + 1 }}</span>
+                <div class="flex flex-wrap gap-1.5 flex-1 min-h-7">
+                  <span
+                    v-for="(name, ni) in pair"
+                    :key="ni"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-sm"
+                    style="background: rgba(255,221,0,0.15); color: var(--color-spike-yellow); border: 1px solid rgba(255,221,0,0.3);"
+                  >
+                    {{ name }}
+                    <button class="opacity-50 hover:opacity-100 text-xs leading-none" @click="removeFromPair(pi, ni)">✕</button>
+                  </span>
+                  <span v-if="pair.length === 0" class="text-xs italic" style="color: var(--color-spike-muted);">leer — Spieler oben antippen</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="text-xs mb-4 hover:opacity-80" style="color: var(--color-spike-muted);" @click="addEmptyPair">
+              + Team-Slot hinzufügen
+            </button>
+
+            <p v-if="manualError" class="text-xs mb-3 px-3 py-2 rounded-lg" style="background: rgba(255,90,31,0.1); color: var(--color-spike-accent);">{{ manualError }}</p>
+
+            <div class="flex gap-3">
+              <button class="btn-secondary flex-1" @click="manualMode = false">Abbrechen</button>
+              <button
+                class="btn-primary flex-1 justify-center"
+                :disabled="!manualComplete || manualLoading"
+                @click="saveManualTeams"
+              >
+                <NetSpinner v-if="manualLoading" :size="16" />
+                {{ manualLoading ? '...' : '✓ Teams speichern' }}
+              </button>
+            </div>
+            <p v-if="!manualComplete && manualPairs.flat().length > 0" class="text-xs mt-2 text-center" style="color: var(--color-spike-muted);">
+              Noch {{ editablePlayers.length - manualAssigned.size }} Spieler nicht zugewiesen
+            </p>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Odd player count dialog -->
     <Teleport to="body">

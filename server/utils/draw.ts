@@ -11,6 +11,29 @@ export interface DrawTeam {
   player3Id: string | null
 }
 
+/**
+ * Schedule matches so no team plays two games in a row.
+ * Uses a greedy algorithm: always pick the next match that doesn't
+ * conflict with the previous one. Falls back gracefully when
+ * unavoidable (e.g. only 4 teams where it's mathematically impossible).
+ */
+export function scheduleMatches<T extends { teamAId?: string | null; teamBId?: string | null }>(
+  matches: T[],
+): T[] {
+  const remaining = shuffle([...matches])
+  const result: T[] = []
+
+  while (remaining.length > 0) {
+    const last = result[result.length - 1]
+    const busy = last ? new Set([last.teamAId, last.teamBId]) : new Set<string | null | undefined>()
+
+    const idx = remaining.findIndex(m => !busy.has(m.teamAId) && !busy.has(m.teamBId))
+    result.push(remaining.splice(idx === -1 ? 0 : idx, 1)[0])
+  }
+
+  return result
+}
+
 /** Fisher-Yates shuffle — mutates and returns the array */
 export function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {

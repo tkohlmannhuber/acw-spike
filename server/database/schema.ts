@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, boolean, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, boolean, timestamp, pgEnum, unique } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -37,6 +37,12 @@ export const scoreModeEnum = pgEnum('score_mode', [
 ])
 
 // ─── Tables ───────────────────────────────────────────────────────────────────
+
+export const knownPlayers = pgTable('known_players', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, t => [unique().on(t.name)])
 
 export const tournaments = pgTable('tournaments', {
   id: uuid('id').primaryKey().defaultRandom(),

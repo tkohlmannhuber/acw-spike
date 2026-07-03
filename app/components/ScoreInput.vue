@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 const props = defineProps<{
   matchId: string
   teamAName: string
@@ -46,13 +48,13 @@ async function reset() {
 }
 
 function increment(which: 'a' | 'b') {
-  const ref = which === 'a' ? scoreA : scoreB
-  ref.value = String((parseInt(ref.value) || 0) + 1)
+  const target = which === 'a' ? scoreA : scoreB
+  target.value = String((parseInt(target.value) || 0) + 1)
 }
 function decrement(which: 'a' | 'b') {
-  const ref = which === 'a' ? scoreA : scoreB
-  const v = parseInt(ref.value) || 0
-  if (v > 0) ref.value = String(v - 1)
+  const target = which === 'a' ? scoreA : scoreB
+  const v = parseInt(target.value) || 0
+  if (v > 0) target.value = String(v - 1)
 }
 </script>
 

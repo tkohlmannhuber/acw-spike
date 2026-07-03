@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = defineProps<{
   tournamentId: string
   status: string
@@ -9,14 +11,15 @@ const route = useRoute()
 
 const links = computed(() => {
   const base = `/t/${props.tournamentId}`
+  const isRoundRobin = props.format === 'round_robin_only'
   const all = [
     { to: base, label: 'Dashboard', exact: true },
     { to: `${base}/players`, label: 'Spieler' },
-    ...(props.format !== 'single_elim_only' ? [{ to: `${base}/groups`, label: 'Gruppen' }] : []),
-    ...(['ko_stage', 'finished'].includes(props.status) || props.format === 'single_elim_only'
+    ...(props.format !== 'single_elim_only' ? [{ to: `${base}/groups`, label: isRoundRobin ? 'Spiele' : 'Gruppen' }] : []),
+    ...(!isRoundRobin && (['ko_stage', 'finished'].includes(props.status) || props.format === 'single_elim_only')
       ? [{ to: `${base}/bracket`, label: 'KO-Baum' }]
       : []),
-    ...(props.status === 'finished' ? [{ to: `${base}/results`, label: 'Siegerehrung' }] : []),
+    ...(props.status === 'finished' ? [{ to: `${base}/results`, label: 'Ergebnisse' }] : []),
     { to: `${base}/live`, label: '📱 Live' },
   ]
   return all

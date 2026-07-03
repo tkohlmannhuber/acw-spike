@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 useHead({ title: 'Neues Turnier — ACW Spikeball' })
 
 const router = useRouter()

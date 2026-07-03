@@ -34,12 +34,12 @@ defineProps<{
           v-for="s in standings"
           :key="s.teamId"
           class="transition-colors"
-          :style="s.rank <= (qualifiers ?? 2) ? 'border-left: 2px solid var(--color-spike-yellow);' : ''"
+          :style="qualifiers && s.rank <= qualifiers ? 'border-left: 2px solid var(--color-spike-yellow);' : ''"
         >
           <td class="py-2.5 pr-4">
             <span
               class="w-6 h-6 rounded-full inline-flex items-center justify-center text-xs text-display font-bold"
-              :style="s.rank <= (qualifiers ?? 2)
+              :style="qualifiers && s.rank <= qualifiers
                 ? 'background: var(--color-spike-yellow); color: var(--color-spike-black);'
                 : 'background: var(--color-spike-surface-2); color: var(--color-spike-muted);'"
             >{{ s.rank }}</span>

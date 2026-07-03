@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 const route = useRoute()
 const id = route.params.id as string
 useHead({ title: 'Live — ACW Spikeball' })
